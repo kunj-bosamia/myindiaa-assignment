@@ -3,7 +3,19 @@ const Product = require('../models/Product');
 // Get all products
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const { search , limit } = req.query;
+    let query = {};
+
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+        ],
+      };
+    }
+    const limitNumber = parseInt(limit, 10) || 100;
+    const products = await Product.find(query).limit(limitNumber);
     res.status(200).json({ success: true, data: products });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
