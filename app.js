@@ -1,17 +1,14 @@
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const dotenv = require('dotenv');
 const db = require('./config/db');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const errorHandler = require('./middlewares/errorHandler');
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
