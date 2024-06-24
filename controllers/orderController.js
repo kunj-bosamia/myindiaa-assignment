@@ -78,8 +78,7 @@ exports.createOrder = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    // res.status(201).json({ success: true, sessionId: stripeSession.id, url: stripeSession.url });
-    res.redirect(session.url)
+    res.status(201).json({ success: true, sessionId: stripeSession.id, url: stripeSession.url });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
