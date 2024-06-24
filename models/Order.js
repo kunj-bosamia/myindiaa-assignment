@@ -29,11 +29,16 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'successful', 'failed'],
     default: 'pending'
   },
-  paymentDetails: {
-    id: String,
-    amount: Number,
-    currency: String,
-    payment_method: String
+  paymentId: {
+    type: String
+  },
+  shippingAddress:{
+    city: String,
+    country: String,
+    line1: String,
+    line2: String,
+    postal_code: String,
+    state: String,
   }
 });
 
