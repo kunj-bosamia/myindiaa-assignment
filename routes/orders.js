@@ -17,7 +17,4 @@ router.route('/:id')
   .get(protect, getOrder)
   .put(protect, updateOrder);
 
-router.route('/payment-success')
-  .get(protect, handlePaymentSuccess)
-
 module.exports = router;

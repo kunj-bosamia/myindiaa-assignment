@@ -56,7 +56,7 @@ exports.createOrder = async (req, res) => {
 
       lineItems.push({
         price_data: {
-          currency: 'usd',
+          currency: 'inr',
           product_data: {
             name: product.name,
           },
@@ -70,9 +70,13 @@ exports.createOrder = async (req, res) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.CLIENT_URL}/api/orders/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.CLIENT_URL}/api/orders/cancel`,
+      success_url: `${process.env.CLIENT_URL}/api/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_URL}/api/payment/cancel?session_id={CHECKOUT_SESSION_ID}`,
       metadata: { orderId: order._id.toString() },
+      shipping_address_collection: {
+        allowed_countries: ['IN']
+      },
+      billing_address_collection: 'auto',
     });
 
     await session.commitTransaction();
@@ -157,6 +161,7 @@ exports.handlePaymentSuccess = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Payment successful and order updated', orderId: order._id });
   } catch (err) {
+    console.log("Error in payment success method : " , err)
     res.status(500).json({ success: false, error: err.message });
   }
 };
