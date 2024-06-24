@@ -1,26 +1,59 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const mongoose = require('mongoose');
 // const Payment = require('../models/Payment');
 // const { makePayment } = require('../services/paymentService');
 
 // Create a new order
 exports.createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { products } = req.body;
+
+    // Fetch all products from the database within the transaction
+    const productIds = products.map(item => item.product);
+    const fetchedProducts = await Product.find({ _id: { $in: productIds } }).session(session);
+
+    const productMap = fetchedProducts.reduce((map, product) => {
+      map[product._id.toString()] = product;
+      return map;
+    }, {});
+
+    // Check stock for each product
+    for (const item of products) {
+      const product = productMap[item.product];
+      if (!product) {
+        await session.abortTransaction();
+        return res.status(404).json({ success: false, message: `Product with ID ${item.product} not found` });
+      }
+
+      if (product.stock < item.quantity) {
+        await session.abortTransaction();
+        return res.status(400).json({ success: false, message: `Insufficient stock for product ${product.name}` });
+      }
+    }
+
+    // Create the order
     const order = new Order({
       user: req.user.id,
       products,
       paymentStatus: 'pending',
     });
 
+    await order.save({ session });
+
     const lineItems = [];
 
+    // Update stock and create line items for Stripe session within the transaction
     for (const item of products) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        return res.status(404).json({ success: false, message: `Product with ID ${item.product} not found` });
-      }
+      const product = productMap[item.product];
+
+      product.stock -= item.quantity;
+      await product.save({ session });
+
       lineItems.push({
         price_data: {
           currency: 'usd',
@@ -33,9 +66,7 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    await order.save();
-
-    const session = await stripe.checkout.sessions.create({
+    const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
@@ -44,9 +75,15 @@ exports.createOrder = async (req, res) => {
       metadata: { orderId: order._id.toString() },
     });
 
-    res.status(201).json({ success: true, sessionId: session.id, url: session.url });
+    await session.commitTransaction();
+    session.endSession();
+
+    // res.status(201).json({ success: true, sessionId: stripeSession.id, url: stripeSession.url });
+    res.redirect(session.url)
   } catch (err) {
-    console.log(err)
+    await session.abortTransaction();
+    session.endSession();
+    console.log("Error while creating an order : " , err)
     res.status(500).json({ success: false, error: err.message });
   }
 };
