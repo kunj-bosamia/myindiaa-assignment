@@ -287,18 +287,33 @@ paths:
   /api/orders:
     get:
       summary: Get all orders
+      description: | 
+        • If the logged in user is an admin user , he/she can see all the orders
+
+        • If the logged in user is not an admin user , he/she can see only those orders which belong to that user
       tags: [Orders]
       security:
         - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of products per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 100
+        - name: page
+          in: query
+          description: Page number
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       responses:
         200:
-          description: List of orders
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Order'
+          description: List of orders objects
     post:
       summary: Create a new order
       tags: [Orders]
@@ -321,19 +336,18 @@ paths:
                       quantity:
                         type: number
               example:
-                products: [{ "product": "60df29991d1e8b3a7c8b4571", "quantity": 2 }]
+                products: [{ "product": "product_id_1", "quantity": 2 } , { "product": "product_id_2", "quantity": 2 }]
       responses:
         201:
-          description: Order created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-        400:
-          description: Bad request
+          description: Order created successfully , payment url and order id is sent. Use payment url to make payment
+          
   /api/orders/{id}:
     get:
       summary: Get order by ID
+      description: |
+        • Admin user will be able to see any order
+
+        • If a regular user tries to see an order of some other user , he/she will get a 404 error
       tags: [Orders]
       security:
         - bearerAuth: []
@@ -346,13 +360,7 @@ paths:
           description: Order ID
       responses:
         200:
-          description: Order details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-        404:
-          description: Order not found
+          description: Order object
     put:
       summary: Update an existing order
       tags: [Orders]

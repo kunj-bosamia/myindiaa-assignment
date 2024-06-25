@@ -80,11 +80,11 @@ exports.createOrder = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
-    res.status(201).json({ success: true, sessionId: stripeSession.id, url: stripeSession.url , orderId: order._id });
+    res.status(201).json({ success: true, sessionId: stripeSession.id, paymentUrl: stripeSession.url , orderId: order._id });
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    console.log("Error while creating an order : " , err)
+    console.error("Error while creating an order : " , err)
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -122,6 +122,7 @@ exports.getOrders = async (req, res) => {
       orders
     });
   } catch (error) {
+    console.error("Error while getting orders : " , error)
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -148,6 +149,7 @@ exports.getOrder =  async (req, res) => {
 
     res.status(200).json({ success: true, order });
   } catch (error) {
+    console.error("Error while get an order : " , error)
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -193,6 +195,7 @@ exports.updateOrder = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Order updated successfully', order });
   } catch (error) {
+    console.error("Error while updating order : " , e)
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -229,7 +232,7 @@ exports.handlePaymentSuccess = async (req, res) => {
     }
 
   } catch (err) {
-    console.log("Error in payment success method : " , err)
+    console.error("Error in payment success method : " , err)
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -277,7 +280,7 @@ exports.handlePaymentCancel = async (req, res) => {
     res.status(200).json({ success: true, message: 'Order cancelled and products restocked' });
 
   } catch (err) {
-    console.log("Error in order cancel method: ", err);
+    console.error("Error in order cancel method: ", err);
     await session.abortTransaction();
     session.endSession();
     res.status(500).json({ success: false, error: err.message });
