@@ -9,6 +9,7 @@ const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const errorHandler = require('./middlewares/errorHandler');
+const setupSwagger = require('./swagger');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,6 +29,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+
+// Setup Swagger
+setupSwagger(app);
 
 // Error Handler
 app.use(errorHandler);
