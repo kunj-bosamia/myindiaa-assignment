@@ -60,6 +60,19 @@ paths:
   /api/auth/register:
     post:
       summary: Signup a new user
+      description: |
+        There are two kinds of users:
+          1. user whose role is 'admin'
+          2. user whose role is 'user'
+
+        This API only creates users with role 'user'.
+
+        By default, an admin user is created if not exists when a server is started.
+        This is done for development purposes only. 
+
+        Credentials of default admin user are:
+          1. email - admin@admin.com
+          2. password - admin
       tags: [Auth]
       security: []
       requestBody:
