@@ -4,10 +4,17 @@ const {
   getOrders,
   getOrder,
   updateOrder,
-  handlePaymentSuccess
+  handlePaymentSuccess,
+  handlePaymentCancel
 } = require('../controllers/orderController');
 const { protect } = require('../middlewares/auth');
 const router = express.Router();
+
+router.route('/payment-success')
+  .get(handlePaymentSuccess)
+
+router.route('/payment-cancel')
+  .get(handlePaymentCancel)
 
 router.route('/')
   .get(protect, getOrders)
