@@ -9,52 +9,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  schemas:
-    Order:
-      type: object
-      required:
-        - user
-        - products
-        - totalAmount
-        - paymentStatus
-      properties:
-        user:
-          type: string
-        products:
-          type: array
-          items:
-            type: object
-            properties:
-              product:
-                type: string
-              quantity:
-                type: number
-        totalAmount:
-          type: number
-        paymentStatus:
-          type: string
-          enum: ['pending', 'successful', 'failed']
-        paymentId:
-          type: string
-        shippingAddress:
-          type: object
-          properties:
-            city:
-              type: string
-            country:
-              type: string
-            line1:
-              type: string
-            line2:
-              type: string
-            postal_code:
-              type: string
-            state:
-              type: string
-        status:
-          type: string
-          enum: ['received', 'in progress', 'delivered', 'inactive']
-security:
+  security:
   - bearerAuth: []
 paths:
   /api/auth/register:
