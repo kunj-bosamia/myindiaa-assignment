@@ -49,6 +49,11 @@ The MongoDB database is accessible with read-only privileges for demonstration p
 - **POST /api/orders/payment-success**: Handle successful payment updates.
 - **GET /api/orders/payment-cancel**: Handle cancellation of payment.
 
+## Users Overview
+- There are two types of users:
+  - Admin users: Admin users has some extra privileges over normal users.
+  - Normal users: Can register and log in using the Auth APIs, receiving a JWT token for authentication in Swagger.
+
 ## Admin User
 
 An admin user is automatically created if not already exists with the following credentials:
@@ -56,21 +61,20 @@ An admin user is automatically created if not already exists with the following 
 - **Email:** admin@admin.com
 - **Password:** admin
 
-## Running Locally
+This is done for testing and development purpose only.
 
-If you want to run the app locally:
+## Products Overview
 
-1. **Create a Stripe Account**: Sign up and generate a test secret key. NOTE - keep the payments in test mode only
-2. **Update Docker Compose File**: Replace your secret key [here](https://github.com/kunj-bosamia/myindiaa-assignment/blob/main/docker-compose.yaml#L66) in the `docker-compose.yml`.
-3. **Launch the App**: Run `docker compose up` to start the app and MongoDB locally.
-4. **Access Locally**: Visit http://127.0.0.1:5000/ to interact with the app.
-5. **Mongodb url**: mongodb://localhost:27017 use this mongodb url to connect to the db with any monogdb client.
+- Only admin users can add new products to the database.
+- Only admin users can update details about existing products.
+- Non-admin users can only view product objects.
 
 ## Order Process Overview
 
 ### Placing an Order
 - When a user places an order, its initial status is **received** and the paymentStatus  is **pending**.
 - The `paymentUrl` is provided in the order creation response. Users must use this URL to make the payment.
+- Stripe payment gateway in test mode is used , one can add dummy card details to make the payment.
 
 ### Payment Process
 - **Successful Payment**: If the payment is successful, the order status changes to **in progress** and the `paymentStatus` changes to **successful**.
@@ -82,8 +86,17 @@ If you want to run the app locally:
 
 ### Delivery and Cancellation
 - **Order Delivered**: Once the order is delivered, the admin updates the status to **delivered**.
-- **Order Cancellation**: Users can cancel an order that has been paid for but not delivered. They provide a reason, the refund will be given for that order can verify that via Stripe dashboard. The status of the order then changes to **cancelled**.
+- **Order Cancellation**: Users can cancel an order that has been paid for but not delivered. They provide a reason, the refund will be given for that order can verify that via Stripe dashboard. The status of the order then changes to **cancelled**. When the order is cancelled or deleted products are re-stocked.
 
 ### Automatic Deletion
-- **Pending Payment**: Any order with a `paymentStatus` of **pending** for more than 12 hours is automatically deleted from the database.
+- **Pending Payment**: Any order with a `paymentStatus` of **pending** for more than 12 hours is automatically deleted from the database. When the order is deleted products get re-stocked.
 
+## Running Locally
+
+If you want to run the app locally:
+
+1. **Create a Stripe Account**: Sign up and generate a test secret key. NOTE - keep the payments in test mode only
+2. **Update Docker Compose File**: Replace your secret key [here](https://github.com/kunj-bosamia/myindiaa-assignment/blob/main/docker-compose.yaml#L66) in the `docker-compose.yml`.
+3. **Launch the App**: Run `docker compose up` to start the app and MongoDB locally.
+4. **Access Locally**: Visit http://127.0.0.1:5000/ to interact with the app.
+5. **Mongodb url**: mongodb://localhost:27017 use this mongodb url to connect to the db with any monogdb client.
