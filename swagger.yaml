@@ -317,6 +317,10 @@ paths:
           description: Order object
     put:
       summary: Update an existing order
+      description: | 
+        • Admin user - can update 'updates' & 'status' fields only
+
+        • Non admin user - can update 'shippingAddress'  field only 
       tags: [Orders]
       security:
         - bearerAuth: []

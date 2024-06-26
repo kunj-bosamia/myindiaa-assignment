@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  mongo1:
+    image: mongo:4.4
+    container_name: mongo1
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo1_data:/data/db
+
+  mongo2:
+    image: mongo:4.4
+    container_name: mongo2
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - 27018:27017
+    volumes:
+      - mongo2_data:/data/db
+
+  mongo3:
+    image: mongo:4.4
+    container_name: mongo3
+    command: mongod --replSet rs0 --bind_ip_all
+    ports:
+      - 27019:27017
+    volumes:
+      - mongo3_data:/data/db
+
+  mongo-setup:
+    image: mongo:4.4
+    container_name: mongo-setup
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    command: >
+      bash -c "sleep 5;
+               mongo --host mongo1:27017 <<EOF
+               rs.initiate(
+                 {
+                   _id: 'rs0',
+                   members: [
+                     { _id: 0, host: 'mongo1:27017' },
+                     { _id: 1, host: 'mongo2:27017' },
+                     { _id: 2, host: 'mongo3:27017' }
+                   ]
+                 }
+               );
+               rs.status();
+               EOF"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:  
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo1:27017,mongo2:27017,mongo3:27017/mydatabase?replicaSet=rs0
+      - JWT_SECRET=${JWT_SECRET}
+      - STRIPE_SECRET_KEY=you_stripe_secret
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+      - mongo-setup
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
