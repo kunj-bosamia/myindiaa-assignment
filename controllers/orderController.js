@@ -11,8 +11,22 @@ exports.createOrder = async (req, res) => {
   try {
     const { products } = req.body;
 
+    // Filter out products with quantity 0
+    const filteredProducts = products.filter(item => item.quantity > 0);
+
+    // Aggregate quantities for duplicate products
+    const uniqueProducts = filteredProducts.reduce((acc, item) => {
+      const existing = acc.find(prod => prod.product.toString() === item.product);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        acc.push({ product: item.product, quantity: item.quantity });
+      }
+      return acc;
+    }, []);
+
     // Fetch all products from the database within the transaction
-    const productIds = products.map(item => item.product);
+    const productIds = uniqueProducts.map(item => item.product);
     const fetchedProducts = await Product.find({ _id: { $in: productIds } }).session(session);
 
     const productMap = fetchedProducts.reduce((map, product) => {
@@ -20,8 +34,8 @@ exports.createOrder = async (req, res) => {
       return map;
     }, {});
 
-    // Check stock for each product
-    for (const item of products) {
+    // Check stock and update products within the transaction
+    for (const item of uniqueProducts) {
       const product = productMap[item.product];
       if (!product) {
         await session.abortTransaction();
@@ -32,36 +46,30 @@ exports.createOrder = async (req, res) => {
         await session.abortTransaction();
         return res.status(400).json({ success: false, message: `Insufficient stock for product ${product.name}` });
       }
+
+      // Update product stock
+      product.stock -= item.quantity;
+      await product.save({ session });
     }
 
-    // Create the order
+    // Create the order with aggregated products
     const order = new Order({
       user: req.user.id,
-      products,
+      products: uniqueProducts,
     });
 
     await order.save({ session });
 
-    const lineItems = [];
-
-    // Update stock and create line items for Stripe session within the transaction
-    for (const item of products) {
-      const product = productMap[item.product];
-
-      product.stock -= item.quantity;
-      await product.save({ session });
-
-      lineItems.push({
-        price_data: {
-          currency: 'inr',
-          product_data: {
-            name: product.name,
-          },
-          unit_amount: product.price * 100,
+    const lineItems = uniqueProducts.map(item => ({
+      price_data: {
+        currency: 'inr',
+        product_data: {
+          name: productMap[item.product].name,
         },
-        quantity: item.quantity,
-      });
-    }
+        unit_amount: productMap[item.product].price * 100,
+      },
+      quantity: item.quantity,
+    }));
 
     const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
