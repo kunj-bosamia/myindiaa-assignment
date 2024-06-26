@@ -100,3 +100,49 @@ If you want to run the app locally:
 3. **Launch the App**: Run `docker compose up` to start the app and MongoDB locally.
 4. **Access Locally**: Visit http://127.0.0.1:5000/ to interact with the app.
 5. **Mongodb url**: mongodb://localhost:27017 use this mongodb url to connect to the db with any monogdb client.
+
+## Application Flowchart
+
+```mermaid
+graph TD;
+    A[User Registration and Login] -->|Register| B((Register API));
+    A -->|Login| C((Login API));
+    C -->|JWT Token| D[User];
+    
+    D -->|List Products| E((List Products API));
+    D -->|View Product| F((View Product API));
+    
+    Admin[Admin User] -->|Add Product| G((Add Product API));
+    Admin -->|Update Product| H((Update Product API));
+    
+    D -->|Create Order| I((Create Order API));
+    I -->|Generate Payment URL| J((Payment URL));
+    J -->|Complete Payment| K((Payment Success API));
+    
+    K -->|Update Status to In Progress| L[Order Status: In Progress];
+    
+    Admin -->|Update Order to Delivered| M((Update Order API));
+    
+    D -->|Update Shipping Address| N((Update Shipping API));
+    D -->|Cancel Order| O((Cancel Order API));
+    
+    O -->|Pending Payment| P[Delete Order, Restock Products];
+    O -->|Successful Payment| Q[Process Refund, Update Status to Cancelled];
+    
+    Q -->|Refund| R((Refund API));
+    
+    subgraph Orders;
+    I;
+    L;
+    N;
+    O;
+    P;
+    Q;
+    end;
+    
+    S[Automated Process] -->|Check Pending Orders| T[Delete Orders, Restock Products];
+    
+    subgraph Payment Processing;
+    K;
+    R;
+    end;
