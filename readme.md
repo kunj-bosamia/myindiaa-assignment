@@ -108,11 +108,12 @@ graph TD;
     A[User Registration and Login] -->|Register| B((Register API));
     A -->|Login| C((Login API));
     C -->|JWT Token| D[User];
+    C -->|JWT Token| Admin[Admin User];
     
     D -->|List Products| E((List Products API));
     D -->|View Product| F((View Product API));
     
-    Admin[Admin User] -->|Add Product| G((Add Product API));
+    Admin -->|Add Product| G((Add Product API));
     Admin -->|Update Product| H((Update Product API));
     
     D -->|Create Order| I((Create Order API));
@@ -131,6 +132,8 @@ graph TD;
     
     Q -->|Refund| R((Refund API));
     
+    Q -->|Restock Products| S[Restock Products, Update Status to Cancelled];
+    
     subgraph Orders;
     I;
     L;
@@ -138,9 +141,10 @@ graph TD;
     O;
     P;
     Q;
+    S;
     end;
     
-    S[Automated Process] -->|Check Pending Orders| T[Delete Orders, Restock Products];
+    T[Automated Process] -->|Check Pending Orders| U[Delete Orders, Restock Products];
     
     subgraph Payment Processing;
     K;
