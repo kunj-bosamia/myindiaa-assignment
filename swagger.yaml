@@ -294,8 +294,7 @@ paths:
                 products: [{ "product": "product_id_1", "quantity": 2 } , { "product": "product_id_2", "quantity": 2 }]
       responses:
         201:
-          description: Order created successfully , payment url and order id is sent. Use payment url to make payment
-          
+          description: Order created successfully , payment url and order id is sent. Use payment url to make payment    
   /api/orders/{id}:
     get:
       summary: Get order by ID
@@ -350,15 +349,13 @@ paths:
                       type: string
                     state:
                       type: string
+                status:
+                  type: string
+                updates:
+                  type: string
       responses:
         200:
-          description: Order updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
-        404:
-          description: Order not found
+          description: Return updated order object
   /api/orders/payment-success:
     get:
       summary: Handle payment success

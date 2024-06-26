@@ -10,12 +10,23 @@ const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const errorHandler = require('./middlewares/errorHandler');
 const setupSwagger = require('./swagger');
+const cron = require('node-cron');
+const {cleanupOrders}  = require('./utils/cleanUpOrders')
 
 const app = express();
 const port = process.env.PORT || 5000;
 
 // Database connection
-db();
+db().then(() => {
+    console.log('Connected to MongoDB');
+    // Start the cron job after successful MongoDB connection
+    cron.schedule('0 */12 * * *', () => {
+      console.log('Running scheduled order cleanup...');
+      cleanupOrders();
+    });
+  }).catch(err => {
+    console.error('Error while starting  cron job', err);
+  });
 
 // Middleware
 app.use(cors());

@@ -38,7 +38,6 @@ exports.createOrder = async (req, res) => {
     const order = new Order({
       user: req.user.id,
       products,
-      paymentStatus: 'pending',
     });
 
     await order.save({ session });
@@ -154,49 +153,54 @@ exports.getOrder =  async (req, res) => {
   }
 };
 
-// Update order (only allows updating shipping address)
+// Update order (can only update shipping address , updates , status)
+// admin user can update -> updates(order updates) & status only
+// non admin user can update -> shipping address only
 exports.updateOrder = async (req, res) => {
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  const { id } = req.params;
+  const { shippingAddress, status, updates } = req.body;
+
   try {
-    const userId = req.user._id;
-    const userRole = req.user.role;
-    const orderId = req.params.id;
-
-    // Ensure only 'user' role can update orders
-    if (userRole !== 'user') {
-      return res.status(403).json({ success: false, message: 'Only users can update their orders' });
-    }
-
-    const order = await Order.findById(orderId);
-
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Ensure the order belongs to the user
-    if (order.user.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: 'You can only update your own orders' });
+    if (userRole === 'admin') {
+      // Admin can update status and updates
+      if (status) {
+        order.status = status;
+      }
+      if (updates) {
+        order.updates = updates;
+      }
+    } else {
+      // Check if the order belongs to the user
+      if (order.user.toString() !== userId) {
+        return res.status(403).json({ success: false, message: 'Unauthorized' });
+      }
+
+      // Check if the order status is not delivered
+      if (order.status === 'delivered') {
+        return res.status(400).json({ success: false, message: 'Cannot update a delivered order' });
+      }
+
+      // Update shipping address
+      if (shippingAddress) {
+        order.shippingAddress = {
+          ...order.shippingAddress,
+          ...shippingAddress
+        };
+      }
     }
-
-    if (!order.shippingAddress) {
-      order.shippingAddress = {};
-    }
-
-    // Update shipping address fields if provided
-    const { city, country, line1, line2, postal_code, state } = req.body;
-
-    if (city) order.shippingAddress.city = city;
-    if (country) order.shippingAddress.country = country;
-    if (line1) order.shippingAddress.line1 = line1;
-    if (line2) order.shippingAddress.line2 = line2;
-    if (postal_code) order.shippingAddress.postal_code = postal_code;
-    if (state) order.shippingAddress.state = state;
 
     await order.save();
-
-    res.status(200).json({ success: true, message: 'Order updated successfully', order });
+    return res.status(200).json({ success: true, message: 'Order updated successfully', order });
   } catch (error) {
-    console.error("Error while updating order : " , e)
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Error updating order:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -212,6 +216,7 @@ exports.handlePaymentSuccess = async (req, res) => {
   
       const order = await Order.findByIdAndUpdate(orderId, {
         paymentStatus: 'successful',
+        status: 'inProgress',
         paymentId: session.payment_intent.id,
         shippingAddress: {
           city: session.shipping_details.address.city,

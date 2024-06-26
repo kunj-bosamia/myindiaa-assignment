@@ -24,9 +24,17 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  updates: {
+    type: String,
+  },
+  status: {
+    type: String,
+    enum: ['received', 'inProgress' , 'delivered'],
+    default: 'received'
+  },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'successful', 'failed'],
+    enum: ['pending', 'successful'],
     default: 'pending'
   },
   paymentId: {
