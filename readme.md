@@ -60,7 +60,7 @@ An admin user is automatically created if not already exists with the following 
 
 If you want to run the app locally:
 
-1. **Create a Stripe Account**: Sign up and generate a test secret key.
+1. **Create a Stripe Account**: Sign up and generate a test secret key. NOTE - keep the payments in test mode only
 2. **Update Docker Compose File**: Replace your secret key [here](https://github.com/kunj-bosamia/myindiaa-assignment/blob/main/docker-compose.yaml#L66) in the `docker-compose.yml`.
 3. **Launch the App**: Run `docker compose up` to start the app and MongoDB locally.
 4. **Access Locally**: Visit http://127.0.0.1:5000/ to interact with the app.
