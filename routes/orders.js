@@ -5,7 +5,8 @@ const {
   getOrder,
   updateOrder,
   handlePaymentSuccess,
-  handlePaymentCancel
+  handlePaymentCancel,
+  cancelOrder
 } = require('../controllers/orderController');
 const { protect } = require('../middlewares/auth');
 const router = express.Router();
@@ -15,6 +16,9 @@ router.route('/payment-success')
 
 router.route('/payment-cancel')
   .get(handlePaymentCancel)
+
+router.route('/cancel/:id')
+  .post(protect , cancelOrder)
 
 router.route('/')
   .get(protect, getOrders)

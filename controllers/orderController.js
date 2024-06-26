@@ -291,3 +291,72 @@ exports.handlePaymentCancel = async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+// order cancel
+exports.cancelOrder = async (req, res) => {
+  const orderId = req.params.id;
+  const { reason } = req.body;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      await session.abortTransaction();
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Check if the user owns this order
+    if (!req.user.isAdmin && order.user.toString() !== req.user.id) {
+      await session.abortTransaction();
+      return res.status(403).json({ success: false, message: 'Forbidden: Not allowed to cancel this order' });
+    }
+
+    // Check if the order is already delivered
+    if (order.status === 'delivered') {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: 'Order cannot be cancelled as it is already delivered' });
+    }
+    // Restock products
+    for (const item of order.products) {
+      const product = await Product.findById(item.product).session(session);
+      if (product) {
+        product.stock += item.quantity;
+        await product.save({ session });
+      }
+    }
+
+    // Handle cancellation based on payment status
+    if (order.paymentStatus === 'pending') {
+      // If payment is pending, directly delete the order
+      await Order.findByIdAndDelete(orderId).session(session);
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({ success: true, message: 'Order deleted. Payment was pending for this order.' });
+
+    } else if (order.paymentStatus === 'successful') {
+      const paymentId = order.paymentId;
+      await stripe.refunds.create({
+        payment_intent: paymentId,
+      });
+      order.status = 'cancelled';
+      order.updates = `Order cancelled. Reason: ${reason}`;
+      await order.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(200).json({ success: true, message: 'Order cancelled. Refund initiated successfully.' });
+    } else {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: 'Unexpected payment status for the order' });
+    }
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error('Error cancelling order:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+};

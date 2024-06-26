@@ -360,25 +360,63 @@ paths:
       responses:
         200:
           description: Return updated order object
+  /api/orders/cancel/{id}:
+    post:
+      summary: Cancel an order
+      description: |
+        • Order whose payment is pending will be deleted
+      
+        • Order which is delivered cannot be cancelled
+
+        • Order which is note delivered and payment is done will be cancelled and the refund will be give to the user , refund can be verified on the stripe dashboard
+      tags: [Orders]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Order ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        200:
+          description: cancelled order object
+
   /api/orders/payment-success:
     get:
       summary: Handle payment success
-      tags: [Orders]
+      tags: [Redirect URLs used by Stripe]
+      parameters:
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
+          description: session ID
       responses:
         200:
           description: Payment successful and order updated
-        400:
-          description: Invalid session ID
-        404:
-          description: Session not found
   /api/orders/cancel-order:
     get:
       summary: Handle order cancellation
-      tags: [Orders]
+      tags: [Redirect URLs used by Stripe]
+      parameters:
+        - in: path
+          name: session_id
+          schema:
+            type: string
+          required: true
+          description: session ID
       responses:
         200:
           description: Order canceled and stock updated
-        400:
-          description: Order cannot be canceled
-        404:
-          description: Order not found
